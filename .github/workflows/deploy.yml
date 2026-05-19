@@ -1,0 +1,26 @@
+name: CI/CD Pipeline
+on:
+   push:
+      branches:
+         - main
+jobs:
+   deploy:
+      runs-on: ubuntu-latest
+      steps:
+         - name: Checkout code
+           uses: actions/checkout@v4
+         - name: Deploy to EC2
+           uses: appleboy/ssh-action@master
+           with: 
+              host: ${{ secrets.EC2_HOST }}
+              username: ${{ secrets.EC2_USER }}
+              key: ${{ secrets.SSH_PRIVATE_KEY }}
+              script: |
+                  cd /home/ec2-user/app || mkdir /home/ec2-user/app
+                  cd /home/ec2-user/app
+                  if [ ! -d ".git" ]; then
+                    git clone https://github.com/mdhinakar608/test-project .
+                  fi
+                  git pull origin main
+                  pkill -f app.py || true
+                  nohup python3 app.py > output.log 2>&1 &
